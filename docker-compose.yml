@@ -1,5 +1,5 @@
 master:
-  image: semantive/spark
+  image: fav/spark-2.4
   command: bin/spark-class org.apache.spark.deploy.master.Master -h master
   hostname: master
   environment:
@@ -10,12 +10,12 @@ master:
     - 4040:4040
     - 6066:6066
     - 7077:7077
-    - 8080:8080
+    - 8888:8080
   volumes:
     - ./data:/tmp/data
 
 worker1:
-  image: semantive/spark
+  image: fav/spark-2.4
   command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
   hostname: worker1
   environment:
@@ -33,7 +33,7 @@ worker1:
     - ./data:/tmp/data
 
 worker2:
-  image: semantive/spark
+  image: fav/spark-2.4
   command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
   hostname: worker2
   environment:
