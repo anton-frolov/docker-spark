@@ -24,7 +24,7 @@ RUN useradd -ms /bin/bash spark
 RUN useradd -ms /bin/bash hadoop
 
 # HADOOP
-ENV HADOOP_VERSION 2.7.3
+ENV HADOOP_VERSION 2.7.7
 ENV HADOOP_HOME /opt/hadoop-$HADOOP_VERSION
 ENV HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 ENV PATH $PATH:$HADOOP_HOME/bin
