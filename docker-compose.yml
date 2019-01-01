@@ -1,69 +1,104 @@
-master:
-  image: fav/spark-2.4
-  command: bin/spark-class org.apache.spark.deploy.master.Master -h master
-  hostname: master
-  environment:
-    MASTER: spark://master:7077
-    SPARK_CONF_DIR: /conf
-    SPARK_PUBLIC_DNS: localhost
-  ports:
-    - 4040:4040
-    - 6066:6066
-    - 7077:7077
-    - 8888:8080
-  volumes:
-    - ./data:/tmp/data
+version: '3'
 
-graphdb:
-  image: neo4j:latest
-  hostname: graphdb
-  ports:
-    - 7474:7474
-    - 7687:7687
-  environment:
-    - NEO4J_dbms_security_procedures_unrestricted=apoc.*
-    - NEO4J_apoc_import_file_enabled=true
-    - NEO4J_dbms_shell_enabled=true
-  volumes:
-    - ./plugins:/plugins
-    - ./data:/data
-    - ./import:/import
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+
+  kafka1:
+    image: wurstmeister/kafka
+    container_name: kafka1
+    ports:
+      - "9092:9092"
+    links:
+      - zookeeper:zookeeper
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=192.168.99.100
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_BROKER_ID=1
+      #- KAFKA_CREATE_TOPICS=mytopic:12:1
+    depends_on:
+      - zookeeper
 
 
 
-worker1:
-  image: fav/spark-2.4
-  command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
-  hostname: worker1
-  environment:
-    SPARK_CONF_DIR: /conf
-    SPARK_WORKER_CORES: 4
-    SPARK_WORKER_MEMORY: 2g
-    SPARK_WORKER_PORT: 8881
-    SPARK_WORKER_WEBUI_PORT: 8081
-    SPARK_PUBLIC_DNS: localhost
-  links:
-    - master
-  ports:
-    - 8081:8081
-  volumes:
-    - ./data:/tmp/data
+  kafka-manager:
+    image: hlebalbau/kafka-manager
+    ports:
+      - "9000:9000"
+    links:
+      - zookeeper:zookeeper
+    environment:
+      ZK_HOSTS: "zookeeper:2181"
+      #APPLICATION_SECRET: "random-secret"
+    command: -Dpidfile.path=/dev/null
+    depends_on:
+      - zookeeper
 
-worker2:
-  image: fav/spark-2.4
-  command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
-  hostname: worker2
-  environment:
-    SPARK_CONF_DIR: /conf
-    SPARK_WORKER_CORES: 4
-    SPARK_WORKER_MEMORY: 2g
-    SPARK_WORKER_PORT: 8882
-    SPARK_WORKER_WEBUI_PORT: 8082
-    SPARK_PUBLIC_DNS: localhost
-  links:
-    - master
-  ports:
-    - 8082:8082
-  volumes:
-    - ./data:/tmp/data
+  master:
+    image: fav/spark-2.4
+    command: bin/spark-class org.apache.spark.deploy.master.Master -h master
+    hostname: master
+    environment:
+      MASTER: spark://master:7077
+      SPARK_CONF_DIR: /conf
+      SPARK_PUBLIC_DNS: 192.168.99.100
+    ports:
+      - 4040:4040
+      - 6066:6066
+      - 7077:7077
+      - 8888:8080
+    volumes:
+      - ./data:/tmp/data
 
+  worker1:
+    image: fav/spark-2.4
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+    hostname: worker1
+    environment:
+      SPARK_CONF_DIR: /conf
+      SPARK_WORKER_CORES: 4
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_WORKER_PORT: 8881
+      SPARK_WORKER_WEBUI_PORT: 8081
+      SPARK_PUBLIC_DNS: 192.168.99.100
+    links:
+      - master
+    ports:
+      - 8081:8081
+    volumes:
+      - ./data:/tmp/data
+
+  worker2:
+    image: fav/spark-2.4
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
+    hostname: worker2
+    environment:
+      SPARK_CONF_DIR: /conf
+      SPARK_WORKER_CORES: 4
+      SPARK_WORKER_MEMORY: 2g
+      SPARK_WORKER_PORT: 8882
+      SPARK_WORKER_WEBUI_PORT: 8082
+      SPARK_PUBLIC_DNS: 192.168.99.100
+    links:
+      - master
+    ports:
+      - 8082:8082
+    volumes:
+      - ./data:/tmp/data
+
+  graphdb:
+    image: neo4j:latest
+    hostname: graphdb
+    ports:
+      - 7474:7474
+      - 7687:7687
+    environment:
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_dbms_shell_enabled=true
+    volumes:
+      - ./plugins:/plugins
+      - ./data:/data
+      - ./import:/import
